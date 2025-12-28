@@ -1,4 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solucionador de Sistemas Pro</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/nerdamer.core.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/Algebra.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/Calculus.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/Solve.js"></script>
+    
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$']] }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap');
+
+        .fade-in { opacity: 0; transform: translateY(25px); animation: fadeUp 0.9s ease forwards; }
+        @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+
+        body { background: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+
+        .calculadora-moderna {
+            max-width: 650px; width: 100%; margin: 10px auto; padding: 40px 30px;
+            background: #F2F2F2; border-radius: 35px; font-family: 'Open Sans', sans-serif;
+            position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        .header-section { text-align: center; margin-bottom: 28px; }
+        .header-section h1 { font-size: 40px; font-weight: 600; margin: 0; font-family: 'Playfair Display', serif; color: black; }
+        .header-section p { font-size: 20px; font-weight: 600; margin-top: 5px; font-family: 'Playfair Display', serif; color: #333; }
+
+        label { display: block; font-size: 14px; margin-bottom: 6px; margin-left: 10px; color: #555; font-weight: 600; }
+        input {
+            width: 100%; font-family: 'Open Sans', sans-serif; font-size: 15px; padding: 12px;
+            margin-bottom: 15px; border: 1px solid #ccc; border-radius: 30px;
+            background: white; box-sizing: border-box; transition: all 0.3s ease;
+        }
+
+        .opcion-decimal { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding: 0 10px; }
+
+        .botones-container { display: flex; flex-direction: column; gap: 12px; }
+
+        .boton-estilo {
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+            background: white; border: 1px solid #ccc; border-radius: 35px;
+            padding: 14px 22px; font-family: 'Open Sans', sans-serif;
+            font-size: 14px; cursor: pointer;
+        }
+
+        .boton-principal { background: black; color: white; border: none; font-weight: 600; font-size: 15px; }
+
+        #resultado { margin-top: 30px; padding: 25px; background: white; border-radius: 25px; text-align: center; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+
+<div class="calculadora-moderna">
+    <div class="header-section">
+        <h1>Sistemas de ecuaciones</h1>
+        <p>√(Raiz) Cuadrada²</p>
+    </div>
+
+    <label>Ecuación 1</label>
+    <input type="text" class="eq-input" placeholder="Ej: x + y = 10">
+
+    <label>Ecuación 2</label>
+    <input type="text" class="eq-input" placeholder="Ej: x - y = 2">
+
+    <label>Ecuación 3 (Opcional)</label>
+    <input type="text" class="eq-input" placeholder="Opcional para 3x3">
+
+    <div class="opcion-decimal">
+        <span>Aproximar a decimales</span>
+        <input type="checkbox" id="modoDecimal" onchange="resolverSistema()">
+    </div>
+
+    <div class="botones-container">
+        <button onclick="resolverSistema()" class="boton-estilo boton-principal">Resolver Sistema</button>
+    </div>
+
+    <div id="resultado">Esperando ecuaciones...</div>
+</div>
+
 <script>
+/* VALIDACIÓN VISUAL */
+document.querySelectorAll('.eq-input').forEach(input => {
+    input.addEventListener('input', () => {
+        let val = input.value.trim();
+
+        if (!val) {
+            input.style.borderColor = "#ccc";
+            return;
+        }
+
+        if (!val.includes('=')) {
+            input.style.borderColor = "orange";
+            return;
+        }
+
+        if (/[^0-9xyz+\-*/^().=\s]/i.test(val)) {
+            input.style.borderColor = "red";
+            return;
+        }
+
+        try {
+            let p = val.split('=');
+            nerdamer(`(${p[0]})-(${p[1]})`);
+            input.style.borderColor = "#ccc";
+        } catch {
+            input.style.borderColor = "red";
+        }
+    });
+});
+
+/* RESOLVER SISTEMA */
 function resolverSistema() {
     const inputs = document.querySelectorAll('.eq-input');
     const esDecimal = document.getElementById('modoDecimal').checked;
@@ -7,10 +128,8 @@ function resolverSistema() {
     let eqs = [];
     inputs.forEach(i => {
         if (i.value.trim()) {
-            // Pasar todo a forma = 0
-            let partes = i.value.split('=');
-            if (partes.length !== 2) throw "Formato incorrecto";
-            eqs.push(`(${partes[0]})-(${partes[1]})`);
+            let p = i.value.split('=');
+            eqs.push(`(${p[0]})-(${p[1]})`);
         }
     });
 
@@ -20,39 +139,33 @@ function resolverSistema() {
     }
 
     try {
-        // Detectar variables
         let vars = [];
-        let texto = eqs.join('');
-        if (texto.includes('x')) vars.push('x');
-        if (texto.includes('y')) vars.push('y');
-        if (texto.includes('z')) vars.push('z');
+        let txt = eqs.join('');
+        if (txt.includes('x')) vars.push('x');
+        if (txt.includes('y')) vars.push('y');
+        if (txt.includes('z')) vars.push('z');
 
-        // Resolver sistema
         let sol = nerdamer.solve(eqs, vars);
-
-        if (!sol || Object.keys(sol).length === 0) {
-            out.innerHTML = "<span style='color:orange'>Sin solución o sistema indeterminado</span>";
-            return;
-        }
-
-        let resFinal = [];
+        let res = [];
 
         vars.forEach(v => {
             let val = sol[v][0];
             if (esDecimal) {
-                let num = nerdamer(val).evaluate().text();
-                resFinal.push(`${v} \\approx ${parseFloat(num).toFixed(4)}`);
+                res.push(`${v} ≈ ${parseFloat(nerdamer(val).evaluate().text()).toFixed(4)}`);
             } else {
-                resFinal.push(`${v} = ${nerdamer(val).toTeX()}`);
+                res.push(`${v} = ${nerdamer(val).toTeX()}`);
             }
         });
 
-        out.innerHTML = `$$ \\{ ${resFinal.join(', \\; ')} \\} $$`;
+        out.innerHTML = `$$\\{ ${res.join(',\\ ')} \\}$$`;
         MathJax.typesetPromise([out]);
 
     } catch (e) {
         console.error(e);
-        out.innerHTML = "<span style='color:red'>Error: Revisa la escritura del sistema</span>";
+        out.innerHTML = "<span style='color:red'>Error en el sistema</span>";
     }
 }
 </script>
+
+</body>
+</html>
