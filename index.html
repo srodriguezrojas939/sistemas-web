@@ -21,7 +21,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap');
 
-        /* Animación de entrada */
         .fade-in { opacity: 0; transform: translateY(25px); animation: fadeUp 0.9s ease forwards; }
         @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
 
@@ -43,7 +42,6 @@
             margin-bottom: 15px; border: 1px solid #ccc; border-radius: 30px;
             background: white; box-sizing: border-box; transition: all 0.3s ease;
         }
-        input:focus { outline: none; border-color: #000; box-shadow: 0 0 0 3px rgba(0,0,0,0.05); }
 
         .opcion-decimal { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding: 0 10px; }
         .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
@@ -65,7 +63,6 @@
 
         #resultado { margin-top: 30px; padding: 25px; background: white; border-radius: 25px; min-height: 50px; text-align: center; font-size: 1.2rem; border: 1px solid #eee; overflow-x: auto; }
 
-        /* MODAL ESTÉTICO CORREGIDO */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); }
         .modal-content { 
             background: #F2F2F2; margin: 5vh auto; padding: 40px; border-radius: 35px; 
@@ -78,13 +75,7 @@
         .modal-section h3 { font-family: 'Playfair Display', serif; font-size: 20px; color: #222; margin-bottom: 10px; }
         .modal-section p { font-size: 15px; color: #555; line-height: 1.6; margin: 0; }
         .ejemplo-box { background: white; padding: 15px; border-radius: 20px; margin-top: 10px; font-family: monospace; border-left: 4px solid black; font-size: 14px; color: #333; }
-        .close { position: absolute; top: 25px; right: 30px; font-size: 30px; cursor: pointer; color: #999; transition: 0.3s; }
-        .close:hover { color: black; }
-
-        /* Personalización del scroll del modal */
-        .modal-content::-webkit-scrollbar { width: 8px; }
-        .modal-content::-webkit-scrollbar-track { background: transparent; }
-        .modal-content::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+        .close { position: absolute; top: 25px; right: 30px; font-size: 30px; cursor: pointer; color: #999; }
     </style>
 </head>
 <body>
@@ -132,28 +123,15 @@
     <div class="modal-content">
         <span class="close" onclick="cerrarModal()">&times;</span>
         <h2>Guía de Uso</h2>
-        
         <div class="modal-section">
             <h3>1. Variables x, y, z</h3>
             <p>El sistema detecta automáticamente si estás trabajando en 2D (x, y) o 3D (x, y, z).</p>
         </div>
-
         <div class="modal-section">
             <h3>2. Fracciones Exactas</h3>
-            <p>Por defecto, el resultado se muestra en fracciones. Esto evita errores de redondeo en tus tareas.</p>
+            <p>Por defecto, el resultado se muestra en fracciones. Esto evita errores de redondeo.</p>
             <div class="ejemplo-box">Resultado: x = 5/3</div>
         </div>
-
-        <div class="modal-section">
-            <h3>3. Modo Decimal</h3>
-            <p>Activa el interruptor en la pantalla principal si prefieres ver resultados con puntos decimales.</p>
-        </div>
-
-        <div class="modal-section">
-            <h3>4. Paso a Paso</h3>
-            <p>Usamos el motor de MathDF para mostrarte el procedimiento detallado, ya que es el estándar más confiable.</p>
-        </div>
-
         <div style="text-align: center; margin-top: 40px;">
             <button onclick="cerrarModal()" class="boton-estilo boton-principal" style="width: 100%; max-width: 200px; margin: 0 auto;">Entendido</button>
         </div>
@@ -163,7 +141,6 @@
 <script>
 function abrirModal() { document.getElementById('miModal').style.display = "block"; }
 function cerrarModal() { document.getElementById('miModal').style.display = "none"; }
-window.onclick = function(e) { if (e.target == document.getElementById('miModal')) cerrarModal(); }
 
 function limpiarCampos() {
     document.querySelectorAll('.eq-input').forEach(i => i.value = '');
@@ -178,13 +155,10 @@ function resolverSistema() {
     let rawEqs = [];
     inputs.forEach(i => { if(i.value.trim()) rawEqs.push(i.value.trim()); });
 
-    if (rawEqs.length < 2) { 
-        out.innerHTML = "Introduce al menos 2 ecuaciones."; 
-        return; 
-    }
+    if (rawEqs.length < 2) { out.innerHTML = "Mínimo 2 ecuaciones."; return; }
 
     try {
-        // Normalización para estabilidad
+        // Normalización para que Nerdamer no falle con el signo igual
         let normalized = rawEqs.map(e => {
             if(e.includes('=')) {
                 let p = e.split('=');
@@ -193,45 +167,33 @@ function resolverSistema() {
             return e;
         });
 
-        // Resolver sistema
+        // Resolver sistema de forma simbólica
         let sol = nerdamer.solveEquations(normalized);
         
-        if (!sol || (Array.isArray(sol) && sol.length === 0)) {
+        if (!sol || Object.keys(sol).length === 0) {
             out.innerHTML = "<span style='color:orange'>Sin solución única.</span>";
             return;
         }
 
         let lineasLatex = [];
-
-        // Procesar resultado (Objeto o Array) para evitar 'undefined'
-        if (Array.isArray(sol)) {
-            sol.forEach(s => {
-                let partes = s.toString().split('=');
-                let v = partes[0], val = partes[1];
-                if (esDecimal) {
-                    let num = nerdamer(val).evaluate().text();
-                    lineasLatex.push(`${v} \\approx ${parseFloat(num).toFixed(4)}`);
-                } else {
-                    lineasLatex.push(`${v} = ${nerdamer(val).toTeX()}`);
-                }
-            });
-        } else {
-            Object.keys(sol).sort().forEach(v => {
-                let valor = sol[v];
-                if (esDecimal) {
-                    let num = nerdamer(valor).evaluate().text();
-                    lineasLatex.push(`${v} \\approx ${parseFloat(num).toFixed(4)}`);
-                } else {
-                    lineasLatex.push(`${v} = ${nerdamer(valor).toTeX()}`);
-                }
-            });
-        }
+        // Ordenamos las variables (x, y, z) y generamos el LaTeX limpio
+        Object.keys(sol).sort().forEach(v => {
+            let valorSimbolico = sol[v];
+            
+            if (esDecimal) {
+                // Modo Decimal: aproximación de 4 dígitos
+                let num = nerdamer(valorSimbolico).evaluate().text();
+                lineasLatex.push(`${v} \\approx ${parseFloat(num).toFixed(4)}`);
+            } else {
+                // Modo Fracción: Usamos toTeX() directamente del objeto original
+                lineasLatex.push(`${v} = ${nerdamer(valorSimbolico).toTeX()}`);
+            }
+        });
 
         out.innerHTML = `$$ \\begin{cases} ${lineasLatex.join(' \\\\ ')} \\end{cases} $$`;
         MathJax.typesetPromise([out]);
 
     } catch (e) {
-        console.error(e);
         out.innerHTML = "<span style='color:red'>Error de sintaxis. Verifica los datos.</span>";
     }
 }
