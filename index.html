@@ -44,7 +44,7 @@
         }
         input:focus { outline: none; border-color: #000; box-shadow: 0 0 0 3px rgba(0,0,0,0.05); }
 
-        .opcion-decimal { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; margin-bottom: 20px; padding: 0 10px; }
+        .opcion-decimal { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding: 0 10px; }
         .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
@@ -95,7 +95,7 @@
             <input type="text" class="eq-input" placeholder="Ej: x - y = 2">
             
             <label>Ecuación 3 (Opcional)</label>
-            <input type="text" class="eq-input" placeholder="Ej: 2x + y - z = 5">
+            <input type="text" class="eq-input" placeholder="Opcional para 3x3">
         </div>
 
         <div class="opcion-decimal">
@@ -116,7 +116,7 @@
             </button>
         </div>
 
-        <div id="resultado">Introduce al menos 2 ecuaciones...</div>
+        <div id="resultado">Esperando ecuaciones...</div>
     </div>
 </div>
 
@@ -126,19 +126,19 @@
         <h2>Guía de Sistemas</h2>
         
         <section>
-            <h3>1. Variables Soportadas</h3>
-            <p>El sistema detectará automáticamente las variables <b>x</b>, <b>y</b> y <b>z</b>. Asegúrate de usarlas consistentemente en todas las ecuaciones.</p>
+            <h3>1. Formato de entrada</h3>
+            <p>Escribe las ecuaciones de forma natural. Asegúrate de usar el signo <b>=</b>.</p>
+            <span class="ejemplo-box">E1: x + y = 5<br>E2: 2x - y = 1</span>
         </section>
 
         <section>
-            <h3>2. Formato de entrada</h3>
-            <p>Puedes escribir la ecuación completa con el signo igual. Si no hay sistema 3x3, deja el tercer campo vacío.</p>
-            <span class="ejemplo-box">E1: 2x + 3y = 12<br>E2: x - y = 1</span>
+            <h3>2. Variables</h3>
+            <p>Puedes usar <b>x</b>, <b>y</b> y <b>z</b>. Si solo llenas dos campos, el sistema resolverá para x e y.</p>
         </section>
 
         <section>
-            <h3>3. Soluciones</h3>
-            <p>Si el sistema tiene solución única, se mostrarán los valores de cada variable. Si es incompatible o indeterminado, el motor arrojará un error de sintaxis o vacío.</p>
+            <h3>3. Paso a paso</h3>
+            <p>La opción de MathDF te mostrará métodos como sustitución, igualación o reducción.</p>
         </section>
 
         <div style="text-align: center; margin-top: 30px;">
@@ -157,46 +157,49 @@ function resolverSistema() {
     const esDecimal = document.getElementById('modoDecimal').checked;
     const out = document.getElementById('resultado');
     
-    let ecuaciones = [];
-    inputs.forEach(input => {
-        if (input.value.trim() !== "") {
-            ecuaciones.push(input.value.trim().replace(/ln/g, 'log').replace(/π/g, 'pi'));
-        }
-    });
+    let eqs = [];
+    inputs.forEach(i => { if(i.value.trim()) eqs.push(i.value.trim().replace(/ln/g, 'log').replace(/π/g, 'pi')); });
 
-    if (ecuaciones.length < 2) {
-        out.innerHTML = "Introduce al menos 2 ecuaciones.";
-        return;
-    }
+    if (eqs.length < 2) { out.innerHTML = "Introduce al menos 2 ecuaciones."; return; }
 
     try {
-        nerdamer.set('SOLVE_SOLUTIONS_AS_EXPRESSIONS', 'true');
+        // Detectar variables presentes automáticamente
+        let vars = [];
+        if (eqs.join('').includes('x')) vars.push('x');
+        if (eqs.join('').includes('y')) vars.push('y');
+        if (eqs.join('').includes('z')) vars.push('z');
+
+        // USAR MÉTODO DE NERDAMER ESPECÍFICO PARA SISTEMAS
+        let sol = nerdamer.solve(eqs, vars);
         
-        // Determinamos qué variables están presentes
-        let vars = ['x', 'y', 'z'].filter(v => ecuaciones.some(eq => eq.includes(v)));
+        // Convertimos el resultado a un objeto legible
+        // Nerdamer devuelve las soluciones como una lista de listas [[x_val, y_val...]]
+        let solucionesArray = sol.symbol.elements;
         
-        // Resolver el sistema
-        let sol = nerdamer.solve(ecuaciones, vars);
-        
-        // Nerdamer solve para sistemas devuelve un objeto donde cada propiedad es una variable
-        let renderTeX = "";
-        
-        if (esDecimal) {
-            renderTeX = vars.map(v => {
-                let val = nerdamer(sol[v]).evaluate().text();
-                return `${v} \\approx ${parseFloat(val).toFixed(4)}`;
-            }).join(', \\quad ');
-        } else {
-            renderTeX = vars.map(v => {
-                return `${v} = ${nerdamer(sol[v]).toTeX()}`;
-            }).join(', \\quad ');
+        if (solucionesArray.length === 0) {
+            out.innerHTML = "<span style='color:orange'>Sin solución o sistema indeterminado</span>";
+            return;
         }
 
-        out.innerHTML = `$$ \\{ ${renderTeX} \\} $$`;
+        let firstSet = solucionesArray[0].elements; // Tomamos el primer conjunto de soluciones
+        let resFinal = [];
+
+        vars.forEach((v, index) => {
+            let valSymbol = firstSet[index];
+            if (esDecimal) {
+                let num = nerdamer(valSymbol).evaluate().text();
+                resFinal.push(`${v} \\approx ${parseFloat(num).toFixed(4)}`);
+            } else {
+                resFinal.push(`${v} = ${nerdamer(valSymbol).toTeX()}`);
+            }
+        });
+
+        out.innerHTML = `$$ \\{ ${resFinal.join(', \\; ')} \\} $$`;
         MathJax.typesetPromise([out]);
 
     } catch (e) {
-        out.innerHTML = "<span style='color:red'>Error: Sistema sin solución o mal escrito</span>";
+        console.error(e);
+        out.innerHTML = "<span style='color:red'>Error: Revisa la escritura del sistema</span>";
     }
 }
 
@@ -205,10 +208,7 @@ function irAPasoAPasoSys() {
     let eqs = [];
     inputs.forEach(i => { if(i.value) eqs.push(i.value); });
     if (eqs.length < 2) return;
-
-    // MathDF para sistemas usa las ecuaciones separadas por comas en el mismo link
-    let query = eqs.join(', ');
-    window.open(`https://mathdf.com/equ/es/?expr=${encodeURIComponent(query)}`, '_blank');
+    window.open(`https://mathdf.com/equ/es/?expr=${encodeURIComponent(eqs.join(','))}`, '_blank');
 }
 </script>
 
