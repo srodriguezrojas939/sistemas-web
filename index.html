@@ -64,13 +64,8 @@
         #resultado { margin-top: 30px; padding: 25px; background: white; border-radius: 25px; min-height: 50px; text-align: center; font-size: 1.2rem; border: 1px solid #eee; overflow-x: auto; }
 
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
-        .modal-content { 
-            background: #F2F2F2; margin: 5% auto; padding: 35px; border-radius: 35px; 
-            width: 90%; max-width: 550px; position: relative; animation: fadeUp 0.5s ease; font-family: 'Open Sans', sans-serif;
-        }
-        .modal-content h2 { font-family: 'Playfair Display', serif; font-size: 28px; border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-top: 0; }
-        .ejemplo-box { background: white; padding: 10px 15px; border-radius: 15px; display: block; font-family: monospace; margin: 10px 0; border-left: 3px solid black; font-size: 13px; }
-        .close { position: absolute; top: 20px; right: 25px; font-size: 28px; cursor: pointer; color: #666; }
+        .modal-content { background: #F2F2F2; margin: 10% auto; padding: 30px; border-radius: 30px; width: 80%; max-width: 400px; position: relative; }
+        .close { position: absolute; top: 15px; right: 20px; font-size: 25px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -84,13 +79,11 @@
 
         <div id="inputs-container">
             <label>Ecuación 1</label>
-            <input type="text" class="eq-input" placeholder="Ej: 2x+3y-3z=5">
-            
+            <input type="text" class="eq-input" placeholder="Ej: 2x + 3y = 5">
             <label>Ecuación 2</label>
-            <input type="text" class="eq-input" placeholder="Ej: 3x-4y+3z=8">
-            
+            <input type="text" class="eq-input" placeholder="Ej: x - y = 2">
             <label>Ecuación 3 (Opcional)</label>
-            <input type="text" class="eq-input" placeholder="Ej: 2x-4y-2z=6">
+            <input type="text" class="eq-input" placeholder="Ej: x + y + z = 10">
         </div>
 
         <div class="opcion-decimal">
@@ -111,21 +104,15 @@
             </button>
         </div>
 
-        <div id="resultado">Esperando ecuaciones...</div>
+        <div id="resultado">Introduce las ecuaciones...</div>
     </div>
 </div>
 
 <div id="miModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="cerrarModal()">&times;</span>
-        <h2>Guía de Uso</h2>
-        <section>
-            <p>Escribe tus ecuaciones usando x, y, z. El sistema mostrará <b>fracciones exactas</b> por defecto.</p>
-            <span class="ejemplo-box">E1: 2x + 3y = 10<br>E2: x - y = 2</span>
-        </section>
-        <div style="text-align: center; margin-top: 30px;">
-            <button onclick="cerrarModal()" class="boton-estilo boton-principal" style="width: auto; padding: 10px 30px;">Entendido</button>
-        </div>
+        <h2 style="font-family: 'Playfair Display';">Guía</h2>
+        <p>Escribe las ecuaciones con <b>x, y, z</b>. <br><br>Por defecto verás <b>fracciones</b>. Activa el interruptor para ver decimales.</p>
     </div>
 </div>
 
@@ -138,54 +125,54 @@ function resolverSistema() {
     const esDecimal = document.getElementById('modoDecimal').checked;
     const out = document.getElementById('resultado');
     
-    let eqs = [];
-    inputs.forEach(i => { if(i.value.trim()) eqs.push(i.value.trim().replace(/ln/g, 'log').replace(/π/g, 'pi')); });
+    let rawEqs = [];
+    inputs.forEach(i => { if(i.value.trim()) rawEqs.push(i.value.trim()); });
 
-    if (eqs.length < 2) { out.innerHTML = "Introduce al menos 2 ecuaciones."; return; }
+    if (rawEqs.length < 2) { out.innerHTML = "Mínimo 2 ecuaciones."; return; }
 
     try {
-        // 1. Identificar qué variables se están usando
-        let varsUsadas = [];
-        let textoTotal = eqs.join('');
-        if (textoTotal.includes('x')) varsUsadas.push('x');
-        if (textoTotal.includes('y')) varsUsadas.push('y');
-        if (textoTotal.includes('z')) varsUsadas.push('z');
+        // --- PROCESAMIENTO ROBUSTO ---
+        // Convertimos "A = B" en "A - (B)" para que Nerdamer no falle con el signo igual
+        let normalized = rawEqs.map(e => {
+            if(e.includes('=')) {
+                let p = e.split('=');
+                return `(${p[0]}) - (${p[1]})`;
+            }
+            return e;
+        });
 
-        // 2. Resolver el sistema usando el núcleo de Nerdamer
-        // Usamos nerdamer.solve para obtener resultados exactos (fracciones)
-        let sol = nerdamer.solve(eqs, varsUsadas);
+        // Usamos solveEquations que devuelve un objeto {x: valor, y: valor}
+        let sol = nerdamer.solveEquations(normalized);
         
-        // 3. Extraer los resultados correctamente para evitar el "undefined"
-        let listaSoluciones = sol.symbol.elements;
-        
-        if (listaSoluciones.length === 0) {
-            out.innerHTML = "<span style='color:orange'>Sin solución única.</span>";
+        // Si no hay solución, sol será un array vacío o null
+        if (!sol || Object.keys(sol).length === 0) {
+            out.innerHTML = "<span style='color:orange'>Sin solución o error de formato.</span>";
             return;
         }
 
-        // Tomamos el primer conjunto de soluciones (para sistemas lineales siempre es el primero)
-        let valores = listaSoluciones[0].elements;
-        let lineasLatex = [];
+        let lineas = [];
+        // Ordenamos las variables para que siempre salgan x, y, z
+        let vars = Object.keys(sol).sort();
 
-        varsUsadas.forEach((v, index) => {
-            let valorSimbolico = valores[index];
+        vars.forEach(v => {
+            let valor = sol[v]; // Esto es un objeto simbólico de Nerdamer
             
             if (esDecimal) {
-                // Evaluamos numéricamente solo si el switch está ON
-                let num = nerdamer(valorSimbolico).evaluate().text();
-                lineasLatex.push(`${v} \\approx ${parseFloat(num).toFixed(4)}`);
+                // Convertir a decimal solo si se pide
+                let dec = nerdamer(valor).evaluate().text();
+                lineas.push(`${v} \\approx ${parseFloat(dec).toFixed(4)}`);
             } else {
-                // Mantenemos la fracción exacta (toTeX) si el switch está OFF
-                lineasLatex.push(`${v} = ${nerdamer(valorSimbolico).toTeX()}`);
+                // MODO FRACCIÓN: Convertir a TeX directamente
+                lineas.push(`${v} = ${nerdamer(valor).toTeX()}`);
             }
         });
 
-        out.innerHTML = `$$ \\begin{cases} ${lineasLatex.join(' \\\\ ')} \\end{cases} $$`;
+        out.innerHTML = `$$ \\begin{cases} ${lineas.join(' \\\\ ')} \\end{cases} $$`;
         MathJax.typesetPromise([out]);
 
     } catch (e) {
         console.error(e);
-        out.innerHTML = "<span style='color:red'>Revisa la sintaxis. Ejemplo: 2x+3y=5</span>";
+        out.innerHTML = "<span style='color:red'>Error. Revisa que uses x, y, z y signos correctos.</span>";
     }
 }
 
