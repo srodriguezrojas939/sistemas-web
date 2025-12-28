@@ -95,7 +95,7 @@
             <input type="text" class="eq-input" placeholder="Ej: x - y = 2">
             
             <label>Ecuación 3 (Opcional)</label>
-            <input type="text" class="eq-input" placeholder="Opcional para 3x3">
+            <input type="text" class="eq-input" placeholder="Ej: x + y + z = 15">
         </div>
 
         <div class="opcion-decimal">
@@ -127,18 +127,18 @@
         
         <section>
             <h3>1. Formato de entrada</h3>
-            <p>Escribe las ecuaciones de forma natural. Asegúrate de usar el signo <b>=</b>.</p>
-            <span class="ejemplo-box">E1: x + y = 5<br>E2: 2x - y = 1</span>
+            <p>Escribe las ecuaciones con el signo <b>=</b>. Si no lo pones, el sistema igualará a cero automáticamente.</p>
+            <span class="ejemplo-box">Correcto: 3x + 2y = 12</span>
         </section>
 
         <section>
-            <h3>2. Variables</h3>
-            <p>Puedes usar <b>x</b>, <b>y</b> y <b>z</b>. Si solo llenas dos campos, el sistema resolverá para x e y.</p>
+            <h3>2. Variables aceptadas</h3>
+            <p>Usa <b>x</b>, <b>y</b>, y <b>z</b>. El sistema detecta qué variables usaste y te entrega el valor de cada una.</p>
         </section>
 
         <section>
-            <h3>3. Paso a paso</h3>
-            <p>La opción de MathDF te mostrará métodos como sustitución, igualación o reducción.</p>
+            <h3>3. Tipos de Solución</h3>
+            <p>En el modo <b>Exacto</b> verás fracciones o raíces. En el modo <b>Decimal</b> verás números redondeados.</p>
         </section>
 
         <div style="text-align: center; margin-top: 30px;">
@@ -158,48 +158,47 @@ function resolverSistema() {
     const out = document.getElementById('resultado');
     
     let eqs = [];
-    inputs.forEach(i => { if(i.value.trim()) eqs.push(i.value.trim().replace(/ln/g, 'log').replace(/π/g, 'pi')); });
+    inputs.forEach(i => { 
+        if(i.value.trim()) {
+            eqs.push(i.value.trim().replace(/ln/g, 'log').replace(/π/g, 'pi'));
+        }
+    });
 
-    if (eqs.length < 2) { out.innerHTML = "Introduce al menos 2 ecuaciones."; return; }
+    if (eqs.length < 2) { 
+        out.innerHTML = "Por favor, introduce al menos 2 ecuaciones."; 
+        return; 
+    }
 
     try {
-        // Detectar variables presentes automáticamente
-        let vars = [];
-        if (eqs.join('').includes('x')) vars.push('x');
-        if (eqs.join('').includes('y')) vars.push('y');
-        if (eqs.join('').includes('z')) vars.push('z');
-
-        // USAR MÉTODO DE NERDAMER ESPECÍFICO PARA SISTEMAS
-        let sol = nerdamer.solve(eqs, vars);
+        // LA CLAVE: solveEquations es mucho más estable para sistemas
+        let solSet = nerdamer.solveEquations(eqs);
         
-        // Convertimos el resultado a un objeto legible
-        // Nerdamer devuelve las soluciones como una lista de listas [[x_val, y_val...]]
-        let solucionesArray = sol.symbol.elements;
-        
-        if (solucionesArray.length === 0) {
-            out.innerHTML = "<span style='color:orange'>Sin solución o sistema indeterminado</span>";
+        // El resultado es un array de strings tipo ["x=5", "y=3"]
+        if (!solSet || solSet.length === 0) {
+            out.innerHTML = "<span style='color:orange'>Sin solución o sistema indeterminado.</span>";
             return;
         }
 
-        let firstSet = solucionesArray[0].elements; // Tomamos el primer conjunto de soluciones
-        let resFinal = [];
-
-        vars.forEach((v, index) => {
-            let valSymbol = firstSet[index];
+        let renderArray = solSet.map(s => {
+            let partes = s.toString().split('=');
+            let variable = partes[0];
+            let valorRaw = partes[1];
+            
             if (esDecimal) {
-                let num = nerdamer(valSymbol).evaluate().text();
-                resFinal.push(`${v} \\approx ${parseFloat(num).toFixed(4)}`);
+                let num = nerdamer(valorRaw).evaluate().text();
+                return `${variable} \\approx ${parseFloat(num).toFixed(4)}`;
             } else {
-                resFinal.push(`${v} = ${nerdamer(valSymbol).toTeX()}`);
+                let texVal = nerdamer(valorRaw).toTeX();
+                return `${variable} = ${texVal}`;
             }
         });
 
-        out.innerHTML = `$$ \\{ ${resFinal.join(', \\; ')} \\} $$`;
+        out.innerHTML = `$$ \\begin{cases} ${renderArray.join(' \\\\ ')} \\end{cases} $$`;
         MathJax.typesetPromise([out]);
 
     } catch (e) {
         console.error(e);
-        out.innerHTML = "<span style='color:red'>Error: Revisa la escritura del sistema</span>";
+        out.innerHTML = "<span style='color:red'>Error de sintaxis o sistema no lineal complejo. Revisa los datos.</span>";
     }
 }
 
