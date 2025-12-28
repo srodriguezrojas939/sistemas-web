@@ -1,196 +1,49 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solucionador de Sistemas Pro</title>
-
-    <script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/nerdamer.core.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/Algebra.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/Calculus.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/Solve.js"></script>
-    
-    <script>
-        window.MathJax = {
-            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$']] }
-        };
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
-
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap');
-
-        .fade-in { opacity: 0; transform: translateY(25px); animation: fadeUp 0.9s ease forwards; }
-        @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
-
-        body { background: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
-
-        .calculadora-moderna {
-            max-width: 650px; width: 100%; margin: 10px auto; padding: 40px 30px;
-            background: #F2F2F2; border-radius: 35px; font-family: 'Open Sans', sans-serif;
-            position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-        }
-
-        .header-section { text-align: center; margin-bottom: 28px; }
-        .header-section h1 { font-size: 40px; font-weight: 600; margin: 0; font-family: 'Playfair Display', serif; color: black; }
-        .header-section p { font-size: 20px; font-weight: 600; margin-top: 5px; font-family: 'Playfair Display', serif; color: #333; }
-
-        label { display: block; font-size: 14px; margin-bottom: 6px; margin-left: 10px; color: #555; font-weight: 600; }
-        input {
-            width: 100%; font-family: 'Open Sans', sans-serif; font-size: 15px; padding: 12px;
-            margin-bottom: 15px; border: 1px solid #ccc; border-radius: 30px;
-            background: white; box-sizing: border-box; transition: all 0.3s ease;
-        }
-        input:focus { outline: none; border-color: #000; box-shadow: 0 0 0 3px rgba(0,0,0,0.05); }
-
-        .opcion-decimal { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding: 0 10px; }
-        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: black; }
-        input:checked + .slider:before { transform: translateX(26px); }
-
-        .botones-container { display: flex; flex-direction: column; gap: 12px; }
-        .boton-estilo {
-            display: flex; align-items: center; justify-content: center; gap: 12px;
-            background: white; border: 1px solid #ccc; border-radius: 35px;
-            padding: 14px 22px; font-family: 'Open Sans', sans-serif; font-size: 14px; 
-            cursor: pointer; transition: all 0.3s ease; color: black; text-decoration: none;
-        }
-        .boton-estilo:hover { background: #e6e6e6; transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        .boton-principal { background: black; color: white; border: none; font-weight: 600; font-size: 15px; }
-
-        #resultado { margin-top: 30px; padding: 25px; background: white; border-radius: 25px; min-height: 50px; text-align: center; font-size: 1.2rem; border: 1px solid #eee; overflow-x: auto; }
-
-        /* MODAL */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
-        .modal-content { 
-            background: #F2F2F2; margin: 5% auto; padding: 35px; border-radius: 35px; 
-            width: 90%; max-width: 550px; max-height: 80vh; overflow-y: auto; 
-            position: relative; animation: fadeUp 0.5s ease; font-family: 'Open Sans', sans-serif;
-        }
-        .modal-content h2 { font-family: 'Playfair Display', serif; font-size: 28px; border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-top: 0; }
-        .modal-content h3 { font-family: 'Playfair Display', serif; font-size: 18px; margin-bottom: 8px; color: #000; margin-top: 20px; }
-        .modal-content p { font-size: 14px; color: #444; line-height: 1.5; }
-        .ejemplo-box { background: white; padding: 10px 15px; border-radius: 15px; display: block; font-family: monospace; margin: 10px 0; border-left: 3px solid black; font-size: 13px; }
-        .close { position: absolute; top: 20px; right: 25px; font-size: 28px; cursor: pointer; color: #666; }
-    </style>
-</head>
-<body>
-
-<div class="fade-in">
-    <div class="calculadora-moderna">
-        <div class="header-section">
-            <h1>Sistemas de ecuaciones</h1>
-            <p>√(Raiz) Cuadrada²</p>
-        </div>
-
-        <div id="inputs-container">
-            <label>Ecuación 1</label>
-            <input type="text" class="eq-input" placeholder="Ej: x + y = 10">
-            
-            <label>Ecuación 2</label>
-            <input type="text" class="eq-input" placeholder="Ej: x - y = 2">
-            
-            <label>Ecuación 3 (Opcional)</label>
-            <input type="text" class="eq-input" placeholder="Opcional para 3x3">
-        </div>
-
-        <div class="opcion-decimal">
-            <span style="font-size: 14px; color: #333;">Aproximar a decimales</span>
-            <label class="switch">
-                <input type="checkbox" id="modoDecimal" onchange="resolverSistema()">
-                <span class="slider"></span>
-            </label>
-        </div>
-
-        <div class="botones-container">
-            <button onclick="resolverSistema()" class="boton-estilo boton-principal">Resolver Sistema</button>
-            <button onclick="irAPasoAPasoSys()" class="boton-estilo">
-                <img src="https://cdn-icons-png.flaticon.com/512/2374/2374367.png" width="20"> Ver paso a paso (MathDF)
-            </button>
-            <button onclick="abrirModal()" class="boton-estilo">
-                <img src="https://cdn-icons-png.flaticon.com/512/471/471664.png" width="20"> ¿Cómo funciona?
-            </button>
-        </div>
-
-        <div id="resultado">Esperando ecuaciones...</div>
-    </div>
-</div>
-
-<div id="miModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="cerrarModal()">&times;</span>
-        <h2>Guía de Sistemas</h2>
-        
-        <section>
-            <h3>1. Formato de entrada</h3>
-            <p>Escribe las ecuaciones de forma natural. Asegúrate de usar el signo <b>=</b>.</p>
-            <span class="ejemplo-box">E1: x + y = 5<br>E2: 2x - y = 1</span>
-        </section>
-
-        <section>
-            <h3>2. Variables</h3>
-            <p>Puedes usar <b>x</b>, <b>y</b> y <b>z</b>. Si solo llenas dos campos, el sistema resolverá para x e y.</p>
-        </section>
-
-        <section>
-            <h3>3. Paso a paso</h3>
-            <p>La opción de MathDF te mostrará métodos como sustitución, igualación o reducción.</p>
-        </section>
-
-        <div style="text-align: center; margin-top: 30px;">
-            <button onclick="cerrarModal()" class="boton-estilo boton-principal" style="width: auto; padding: 10px 30px;">Entendido</button>
-        </div>
-    </div>
-</div>
-
 <script>
-function abrirModal() { document.getElementById('miModal').style.display = "block"; }
-function cerrarModal() { document.getElementById('miModal').style.display = "none"; }
-window.onclick = function(e) { if (e.target == document.getElementById('miModal')) cerrarModal(); }
-
 function resolverSistema() {
     const inputs = document.querySelectorAll('.eq-input');
     const esDecimal = document.getElementById('modoDecimal').checked;
     const out = document.getElementById('resultado');
-    
-    let eqs = [];
-    inputs.forEach(i => { if(i.value.trim()) eqs.push(i.value.trim().replace(/ln/g, 'log').replace(/π/g, 'pi')); });
 
-    if (eqs.length < 2) { out.innerHTML = "Introduce al menos 2 ecuaciones."; return; }
+    let eqs = [];
+    inputs.forEach(i => {
+        if (i.value.trim()) {
+            // Pasar todo a forma = 0
+            let partes = i.value.split('=');
+            if (partes.length !== 2) throw "Formato incorrecto";
+            eqs.push(`(${partes[0]})-(${partes[1]})`);
+        }
+    });
+
+    if (eqs.length < 2) {
+        out.innerHTML = "Introduce al menos 2 ecuaciones.";
+        return;
+    }
 
     try {
-        // Detectar variables presentes automáticamente
+        // Detectar variables
         let vars = [];
-        if (eqs.join('').includes('x')) vars.push('x');
-        if (eqs.join('').includes('y')) vars.push('y');
-        if (eqs.join('').includes('z')) vars.push('z');
+        let texto = eqs.join('');
+        if (texto.includes('x')) vars.push('x');
+        if (texto.includes('y')) vars.push('y');
+        if (texto.includes('z')) vars.push('z');
 
-        // USAR MÉTODO DE NERDAMER ESPECÍFICO PARA SISTEMAS
+        // Resolver sistema
         let sol = nerdamer.solve(eqs, vars);
-        
-        // Convertimos el resultado a un objeto legible
-        // Nerdamer devuelve las soluciones como una lista de listas [[x_val, y_val...]]
-        let solucionesArray = sol.symbol.elements;
-        
-        if (solucionesArray.length === 0) {
+
+        if (!sol || Object.keys(sol).length === 0) {
             out.innerHTML = "<span style='color:orange'>Sin solución o sistema indeterminado</span>";
             return;
         }
 
-        let firstSet = solucionesArray[0].elements; // Tomamos el primer conjunto de soluciones
         let resFinal = [];
 
-        vars.forEach((v, index) => {
-            let valSymbol = firstSet[index];
+        vars.forEach(v => {
+            let val = sol[v][0];
             if (esDecimal) {
-                let num = nerdamer(valSymbol).evaluate().text();
+                let num = nerdamer(val).evaluate().text();
                 resFinal.push(`${v} \\approx ${parseFloat(num).toFixed(4)}`);
             } else {
-                resFinal.push(`${v} = ${nerdamer(valSymbol).toTeX()}`);
+                resFinal.push(`${v} = ${nerdamer(val).toTeX()}`);
             }
         });
 
@@ -202,15 +55,4 @@ function resolverSistema() {
         out.innerHTML = "<span style='color:red'>Error: Revisa la escritura del sistema</span>";
     }
 }
-
-function irAPasoAPasoSys() {
-    const inputs = document.querySelectorAll('.eq-input');
-    let eqs = [];
-    inputs.forEach(i => { if(i.value) eqs.push(i.value); });
-    if (eqs.length < 2) return;
-    window.open(`https://mathdf.com/equ/es/?expr=${encodeURIComponent(eqs.join(','))}`, '_blank');
-}
 </script>
-
-</body>
-</html>
