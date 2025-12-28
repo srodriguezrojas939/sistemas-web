@@ -111,8 +111,39 @@
 <div id="miModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="cerrarModal()">&times;</span>
-        <h2 style="font-family: 'Playfair Display';">Guía</h2>
-        <p>Escribe las ecuaciones con <b>x, y, z</b>. <br><br>Por defecto verás <b>fracciones</b>. Activa el interruptor para ver decimales.</p>
+        <h2 style="font-family: 'Playfair Display';">Guía de uso (Sistemas de ecuaciones)</h2>
+         
+        <section>
+            <h3>1. Identidades y Paréntesis</h3>
+            <p>Usa siempre paréntesis para envolver el argumento de funciones trigonométricas, logaritmos o raíces para asegurar la precisión.</p>
+            <span class="ejemplo-box">Correcto: cos(x), tan(2*x), log(x)</span>
+        </section>
+
+        <section>
+            <h3>2. Multiplicación y división</h3>
+            <p>Usa el asterisco <b>*</b> para multiplicar. Para divisiones, usa paréntesis para agrupar numeradores y denominadores complejos.</p>
+            <span class="ejemplo-box">Ejemplo: x*sin(x) &nbsp; | &nbsp; (x+4)/(5+10)</span>
+        </section>
+
+        <section>
+            <h3>3. Sobre el Logaritmo Natural (ln)</h3>
+            <p>El sistema interpreta <b>ln</b> como <b>log</b>. El resultado se mostrará con la nomenclatura estándar del motor:</p>
+            <span class="ejemplo-box">log(x) equivale al logaritmo natural</span>
+        </section>
+
+        <section>
+            <h3>4. Redirección a MathDF</h3>
+            <p>No tenemos vínculo oficial con MathDF. Te redirigimos allí para el "paso a paso" por su calidad técnica, ya que actualmente no cuento con el tiempo para programar un motor de pasos desde cero.</p>
+        </section>
+        
+        <section>
+            <h3>5. Aproximación a decimal</h3>
+            <p>Si el resultado exacto muestra fracciones muy extensas, puedes activar el interruptor de aproximación decimal en cualquier momento.</p>
+        </section>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <button onclick="cerrarModal()" class="boton-estilo boton-principal" style="width: auto; padding: 10px 30px;">Entendido</button>
+        </div>   
     </div>
 </div>
 
