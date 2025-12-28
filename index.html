@@ -111,8 +111,8 @@
 <div id="miModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="cerrarModal()">&times;</span>
-        <h2 style="font-family: 'Playfair Display';">Guía de uso (Sistemas de ecuaciones)</h2>
-         
+        <h2>Guía de Uso (Sistemas de ecuaciones)</h2>
+        
         <section>
             <h3>1. Identidades y Paréntesis</h3>
             <p>Usa siempre paréntesis para envolver el argumento de funciones trigonométricas, logaritmos o raíces para asegurar la precisión.</p>
@@ -126,9 +126,8 @@
         </section>
 
         <section>
-            <h3>3. Sobre el Logaritmo Natural (ln)</h3>
-            <p>El sistema interpreta <b>ln</b> como <b>log</b>. El resultado se mostrará con la nomenclatura estándar del motor:</p>
-            <span class="ejemplo-box">log(x) equivale al logaritmo natural</span>
+            <h3>3. Variables</h3>
+            <p>El sistema solo interpreta <b>x</b> , <b>y</b> , , <b>z</b>. 
         </section>
 
         <section>
@@ -143,10 +142,9 @@
 
         <div style="text-align: center; margin-top: 30px;">
             <button onclick="cerrarModal()" class="boton-estilo boton-principal" style="width: auto; padding: 10px 30px;">Entendido</button>
-        </div>   
+        </div>
     </div>
 </div>
-
 <script>
 function abrirModal() { document.getElementById('miModal').style.display = "block"; }
 function cerrarModal() { document.getElementById('miModal').style.display = "none"; }
