@@ -42,7 +42,6 @@
             margin-bottom: 15px; border: 1px solid #ccc; border-radius: 30px;
             background: white; box-sizing: border-box; transition: all 0.3s ease;
         }
-        input:focus { outline: none; border-color: #000; box-shadow: 0 0 0 3px rgba(0,0,0,0.05); }
 
         .opcion-decimal { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding: 0 10px; }
         .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
@@ -64,16 +63,12 @@
 
         #resultado { margin-top: 30px; padding: 25px; background: white; border-radius: 25px; min-height: 50px; text-align: center; font-size: 1.2rem; border: 1px solid #eee; overflow-x: auto; }
 
-        /* MODAL */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
         .modal-content { 
             background: #F2F2F2; margin: 5% auto; padding: 35px; border-radius: 35px; 
-            width: 90%; max-width: 550px; max-height: 80vh; overflow-y: auto; 
-            position: relative; animation: fadeUp 0.5s ease; font-family: 'Open Sans', sans-serif;
+            width: 90%; max-width: 550px; position: relative; animation: fadeUp 0.5s ease; font-family: 'Open Sans', sans-serif;
         }
         .modal-content h2 { font-family: 'Playfair Display', serif; font-size: 28px; border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-top: 0; }
-        .modal-content h3 { font-family: 'Playfair Display', serif; font-size: 18px; margin-bottom: 8px; color: #000; margin-top: 20px; }
-        .modal-content p { font-size: 14px; color: #444; line-height: 1.5; }
         .ejemplo-box { background: white; padding: 10px 15px; border-radius: 15px; display: block; font-family: monospace; margin: 10px 0; border-left: 3px solid black; font-size: 13px; }
         .close { position: absolute; top: 20px; right: 25px; font-size: 28px; cursor: pointer; color: #666; }
     </style>
@@ -89,13 +84,13 @@
 
         <div id="inputs-container">
             <label>Ecuación 1</label>
-            <input type="text" class="eq-input" placeholder="Ej: x + y = 10">
+            <input type="text" class="eq-input" placeholder="Ej: 2x+3y-3z=5">
             
             <label>Ecuación 2</label>
-            <input type="text" class="eq-input" placeholder="Ej: x - y = 2">
+            <input type="text" class="eq-input" placeholder="Ej: 3x-4y+3z=8">
             
             <label>Ecuación 3 (Opcional)</label>
-            <input type="text" class="eq-input" placeholder="Ej: x + y + z = 15">
+            <input type="text" class="eq-input" placeholder="Ej: 2x-4y-2z=6">
         </div>
 
         <div class="opcion-decimal">
@@ -123,24 +118,11 @@
 <div id="miModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="cerrarModal()">&times;</span>
-        <h2>Guía de Sistemas</h2>
-        
+        <h2>Guía de Uso</h2>
         <section>
-            <h3>1. Formato de entrada</h3>
-            <p>Escribe las ecuaciones con el signo <b>=</b>. Si no lo pones, el sistema igualará a cero automáticamente.</p>
-            <span class="ejemplo-box">Correcto: 3x + 2y = 12</span>
+            <p>Escribe tus ecuaciones usando x, y, z. El sistema mostrará <b>fracciones exactas</b> por defecto.</p>
+            <span class="ejemplo-box">E1: 2x + 3y = 10<br>E2: x - y = 2</span>
         </section>
-
-        <section>
-            <h3>2. Variables aceptadas</h3>
-            <p>Usa <b>x</b>, <b>y</b>, y <b>z</b>. El sistema detecta qué variables usaste y te entrega el valor de cada una.</p>
-        </section>
-
-        <section>
-            <h3>3. Tipos de Solución</h3>
-            <p>En el modo <b>Exacto</b> verás fracciones o raíces. En el modo <b>Decimal</b> verás números redondeados.</p>
-        </section>
-
         <div style="text-align: center; margin-top: 30px;">
             <button onclick="cerrarModal()" class="boton-estilo boton-principal" style="width: auto; padding: 10px 30px;">Entendido</button>
         </div>
@@ -150,7 +132,6 @@
 <script>
 function abrirModal() { document.getElementById('miModal').style.display = "block"; }
 function cerrarModal() { document.getElementById('miModal').style.display = "none"; }
-window.onclick = function(e) { if (e.target == document.getElementById('miModal')) cerrarModal(); }
 
 function resolverSistema() {
     const inputs = document.querySelectorAll('.eq-input');
@@ -158,47 +139,53 @@ function resolverSistema() {
     const out = document.getElementById('resultado');
     
     let eqs = [];
-    inputs.forEach(i => { 
-        if(i.value.trim()) {
-            eqs.push(i.value.trim().replace(/ln/g, 'log').replace(/π/g, 'pi'));
-        }
-    });
+    inputs.forEach(i => { if(i.value.trim()) eqs.push(i.value.trim().replace(/ln/g, 'log').replace(/π/g, 'pi')); });
 
-    if (eqs.length < 2) { 
-        out.innerHTML = "Por favor, introduce al menos 2 ecuaciones."; 
-        return; 
-    }
+    if (eqs.length < 2) { out.innerHTML = "Introduce al menos 2 ecuaciones."; return; }
 
     try {
-        // LA CLAVE: solveEquations es mucho más estable para sistemas
-        let solSet = nerdamer.solveEquations(eqs);
+        // 1. Identificar qué variables se están usando
+        let varsUsadas = [];
+        let textoTotal = eqs.join('');
+        if (textoTotal.includes('x')) varsUsadas.push('x');
+        if (textoTotal.includes('y')) varsUsadas.push('y');
+        if (textoTotal.includes('z')) varsUsadas.push('z');
+
+        // 2. Resolver el sistema usando el núcleo de Nerdamer
+        // Usamos nerdamer.solve para obtener resultados exactos (fracciones)
+        let sol = nerdamer.solve(eqs, varsUsadas);
         
-        // El resultado es un array de strings tipo ["x=5", "y=3"]
-        if (!solSet || solSet.length === 0) {
-            out.innerHTML = "<span style='color:orange'>Sin solución o sistema indeterminado.</span>";
+        // 3. Extraer los resultados correctamente para evitar el "undefined"
+        let listaSoluciones = sol.symbol.elements;
+        
+        if (listaSoluciones.length === 0) {
+            out.innerHTML = "<span style='color:orange'>Sin solución única.</span>";
             return;
         }
 
-        let renderArray = solSet.map(s => {
-            let partes = s.toString().split('=');
-            let variable = partes[0];
-            let valorRaw = partes[1];
+        // Tomamos el primer conjunto de soluciones (para sistemas lineales siempre es el primero)
+        let valores = listaSoluciones[0].elements;
+        let lineasLatex = [];
+
+        varsUsadas.forEach((v, index) => {
+            let valorSimbolico = valores[index];
             
             if (esDecimal) {
-                let num = nerdamer(valorRaw).evaluate().text();
-                return `${variable} \\approx ${parseFloat(num).toFixed(4)}`;
+                // Evaluamos numéricamente solo si el switch está ON
+                let num = nerdamer(valorSimbolico).evaluate().text();
+                lineasLatex.push(`${v} \\approx ${parseFloat(num).toFixed(4)}`);
             } else {
-                let texVal = nerdamer(valorRaw).toTeX();
-                return `${variable} = ${texVal}`;
+                // Mantenemos la fracción exacta (toTeX) si el switch está OFF
+                lineasLatex.push(`${v} = ${nerdamer(valorSimbolico).toTeX()}`);
             }
         });
 
-        out.innerHTML = `$$ \\begin{cases} ${renderArray.join(' \\\\ ')} \\end{cases} $$`;
+        out.innerHTML = `$$ \\begin{cases} ${lineasLatex.join(' \\\\ ')} \\end{cases} $$`;
         MathJax.typesetPromise([out]);
 
     } catch (e) {
         console.error(e);
-        out.innerHTML = "<span style='color:red'>Error de sintaxis o sistema no lineal complejo. Revisa los datos.</span>";
+        out.innerHTML = "<span style='color:red'>Revisa la sintaxis. Ejemplo: 2x+3y=5</span>";
     }
 }
 
