@@ -35,7 +35,6 @@
         .header-section h1 { font-family: 'Playfair Display', serif; font-size: 32px; margin: 0; }
         .header-section p { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; margin: 5px 0; }
 
-        /* Visualizador en tiempo real */
         #preview-container {
             background: white; margin-bottom: 25px; padding: 15px;
             border-radius: 20px; min-height: 60px; display: flex;
@@ -43,7 +42,7 @@
             overflow-x: auto;
         }
 
-        .input-group { margin-bottom: 10px; position: relative; }
+        .input-group { margin-bottom: 10px; }
         label { font-size: 13px; font-weight: 600; color: #666; margin-left: 12px; }
         
         input {
@@ -75,7 +74,6 @@
             padding: 16px; border-radius: 30px; font-size: 16px; font-weight: 600;
             cursor: pointer; transition: 0.3s;
         }
-        .btn-principal:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
 
         #aviso-imaginario {
             color: #888; text-align: center; font-size: 12px; margin-top: 15px;
@@ -85,11 +83,11 @@
         #resultado {
             margin-top: 25px; padding: 25px; background: white; border-radius: 25px;
             text-align: center; border: 1px solid #eee; overflow-x: auto; min-height: 40px;
+            font-size: 18px;
         }
 
         @media (max-width: 500px) {
             .header-section h1 { font-size: 26px; }
-            .calculadora { padding: 25px 15px; }
         }
     </style>
 </head>
@@ -145,22 +143,10 @@
         const inputs = document.querySelectorAll('.eq-input');
         const preview = document.getElementById('latex-preview');
         let lineas = [];
-
         inputs.forEach(i => {
-            if(i.value.trim() !== "") {
-                try {
-                    // Limpieza básica para visualización
-                    let formatted = i.value.replace(/=/g, ' = ');
-                    lineas.push(formatted);
-                } catch(e) {}
-            }
+            if(i.value.trim() !== "") lineas.push(i.value.trim());
         });
-
-        if (lineas.length === 0) {
-            preview.innerHTML = "$$ \\text{Sistema vacío} $$";
-        } else {
-            preview.innerHTML = `$$ \\begin{cases} ${lineas.join(' \\\\ ')} \\end{cases} $$`;
-        }
+        preview.innerHTML = lineas.length === 0 ? "$$ \\text{Sistema vacío} $$" : `$$ \\begin{cases} ${lineas.join(' \\\\ ')} \\end{cases} $$`;
         MathJax.typesetPromise([preview]);
     }
 
@@ -170,17 +156,13 @@
         const container = document.getElementById('inputs-container');
         const div = document.createElement('div');
         div.className = 'input-group';
-        div.innerHTML = `
-            <label>Ecuación ${contadorFilas}</label>
-            <input type="text" class="eq-input" placeholder="Siguiente ecuación..." oninput="actualizarVistaPrevia()">
-        `;
+        div.innerHTML = `<label>Ecuación ${contadorFilas}</label><input type="text" class="eq-input" placeholder="Siguiente..." oninput="actualizarVistaPrevia()">`;
         container.appendChild(div);
     }
 
     function quitarFila() {
         if(contadorFilas <= 2) return;
-        const container = document.getElementById('inputs-container');
-        container.removeChild(container.lastChild);
+        document.getElementById('inputs-container').lastChild.remove();
         contadorFilas--;
         actualizarVistaPrevia();
     }
@@ -189,58 +171,66 @@
         const inputs = document.querySelectorAll('.eq-input');
         const esDecimal = document.getElementById('modoDecimal').checked;
         const resDiv = document.getElementById('resultado');
-        
         let eqs = [];
+
         inputs.forEach(i => {
             if(i.value.trim()) {
                 let e = i.value.trim();
                 if(e.includes('=')) {
                     let parts = e.split('=');
                     eqs.push(`(${parts[0]}) - (${parts[1]})`);
-                } else {
-                    eqs.push(e);
-                }
+                } else { eqs.push(e); }
             }
         });
 
-        if (eqs.length < 2) {
-            resDiv.innerHTML = "Introduce al menos 2 ecuaciones.";
-            return;
-        }
+        if (eqs.length < 2) { resDiv.innerHTML = "Introduce al menos 2 ecuaciones."; return; }
 
         try {
+            // Resolver sistema
             let sol = nerdamer.solveEquations(eqs);
-            
-            // Verificación de números imaginarios
-            let solString = JSON.stringify(sol);
-            if (solString.includes('i')) {
+            let outputLatex = [];
+
+            // Si nerdamer devuelve [[var, val], [var, val]] lo convertimos a objeto limpio
+            let cleanSol = {};
+            if (Array.isArray(sol)) {
+                if (Array.isArray(sol[0])) {
+                    sol.forEach(pair => { cleanSol[pair[0]] = pair[1]; });
+                } else {
+                    // Si es una sola solución lineal directa
+                    cleanSol = sol; 
+                }
+            } else { cleanSol = sol; }
+
+            // Verificar números imaginarios
+            if (JSON.stringify(cleanSol).includes('i')) {
                 resDiv.innerHTML = "<span style='color:#777;'>La calculadora no admite resultados imaginarios.</span>";
                 return;
             }
 
-            let outputLatex = [];
-            // Nerdamer devuelve un objeto o una lista dependiendo del sistema
-            let variables = Object.keys(sol).sort();
+            // Formatear salida: x = num ; y = num
+            for (let v in cleanSol) {
+                let rawVal = cleanSol[v];
+                let formattedVal;
 
-            variables.forEach(v => {
-                let val = sol[v];
                 if (esDecimal) {
-                    // Convertir a decimal de forma segura
-                    let dec = nerdamer(val).evaluate().text();
-                    outputLatex.push(`${v} \\approx ${parseFloat(dec).toFixed(4)}`);
+                    try {
+                        let evalued = nerdamer(rawVal).evaluate().text();
+                        formattedVal = parseFloat(evalued).toFixed(4);
+                    } catch(e) { formattedVal = "Error"; }
                 } else {
-                    // Formato exacto (raíces, fracciones)
-                    outputLatex.push(`${v} = ${nerdamer(val).toTeX()}`);
+                    formattedVal = nerdamer(rawVal).toTeX();
                 }
-            });
+                outputLatex.push(`${v} = ${formattedVal}`);
+            }
 
             if(outputLatex.length === 0) throw new Error();
 
-            resDiv.innerHTML = `$$ ${outputLatex.join(', \\quad ')} $$`;
+            // Unir con punto y coma para que se vea limpio
+            resDiv.innerHTML = `$$ ${outputLatex.join(' ; \\quad ')} $$`;
             MathJax.typesetPromise([resDiv]);
 
         } catch (e) {
-            resDiv.innerHTML = "<span style='color:red; font-size:14px;'>Error: Sistema sin solución única o error de sintaxis.</span>";
+            resDiv.innerHTML = "<span style='color:red; font-size:14px;'>Error: Sistema inconsistente o error de escritura.</span>";
         }
     }
 </script>
