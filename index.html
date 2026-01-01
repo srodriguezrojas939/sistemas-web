@@ -176,10 +176,56 @@
 
     // Categorías con un ejemplo cada una
     const categorias = {
-        principales: [{ s: 'x', t: 'VARIABLE' }],
-        trig: [{ s: 'sin()', t: 'SENO' }],
-        inv: [{ s: 'asin()', t: 'ARCSIN' }],
-        log: [{ s: 'log()', t: 'LOG' }]
+             principales: [
+        { s: '(', t: 'ABRIR (' }, 
+        { s: ')', t: 'CERRAR )' },
+        { s: '+', t: 'SUMA' }, 
+        { s: '-', t: 'RESTA' },
+        { s: '*', t: 'MULT.' }, 
+        { s: '/', t: 'DIV.' },
+        { s: '( )/( )', t: 'FRACCIÓN' }, 
+        { s: '^', t: 'POTENCIA' },
+        { s: 'sqrt()', t: 'RAÍZ (√)' }, 
+        { s: '^(1/ )', t: 'RAÍZ N' },
+        { s: 'x', t: 'VAR X' }, 
+        { s: 'y', t: 'VAR Y' },
+        { s: 'pi', t: 'PI' }, 
+        { s: 'e', t: 'EULER' },
+        { s: 'inf', t: 'INFINITO' }, 
+        { s: '-inf', t: '- INFINITO' },
+        { s: 'abs()', t: 'ABS.' }, 
+        { s: '!', t: 'FACT.' }
+    ],
+    trig: [
+       { s: 'sin()', t: 'SENO' }, 
+        { s: 'cos()', t: 'COSENO' }, 
+        { s: 'tan()', t: 'TAN' }, 
+        { s: 'sec()', t: 'SEC' }, 
+        { s: 'csc()', t: 'CSC' }, 
+        { s: 'cot()', t: 'COT' },
+        { s: 'sinh()', t: 'SENH' }, 
+        { s: 'cosh()', t: 'COSH' }, 
+        { s: 'tanh()', t: 'TANH' },
+        { s: 'coth()', t: 'COTH' }, 
+        { s: 'sech()', t: 'SECH' }, 
+        { s: 'csch()', t: 'CSCH' }
+    ],
+    inv: [
+    { s: 'asin()', t: 'ARCSIN' }, 
+        { s: 'acos()', t: 'ARCCOS' }, 
+        { s: 'atan()', t: 'ARCTAN' },
+          { s: 'asec()', t: 'ARCSEC' }, 
+        { s: 'acsc()', t: 'ARCCSC' },
+        { s: 'asinh()', t: 'ARSINH' }, 
+        { s: 'acosh()', t: 'ARCOSH' }, 
+        { s: 'atanh()', t: 'ARTANH' },
+        { s: 'acoth()', t: 'ARCOTH' },
+        { s: 'asech()', t: 'ARSECH' }, 
+        { s: 'acsch()', t: 'ARCSCH' }
+    ],
+    log: [
+        { s: 'log()', t: 'LN' }, { s: 'ln()', t: 'LN' }, { s: 'exp()', t: 'EXP' }, { s: 'e^', t: 'E base' }, { s: 'NOTA:', t: 'En los resultados, log representa el logaritmo natural (ln).' }
+    ]
     };
 
     function showCategory(cat, btn) {
