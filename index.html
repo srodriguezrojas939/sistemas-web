@@ -91,6 +91,23 @@
             text-align: center; border: 1px solid #eee; overflow-x: auto; min-height: 50px;
             font-size: 1.2rem;
         }
+
+        /* Estilos de Píldoras y Símbolos (Manteniendo tu estética) */
+        .pills-nav { display: flex; justify-content: center; gap: 8px; margin-top: 25px; flex-wrap: wrap; }
+        .pill { background: #e0e0e0; border: none; padding: 8px 16px; border-radius: 20px; font-size: 13px; cursor: pointer; transition: 0.3s; font-weight: 600; color: #555; font-family: 'Open Sans', sans-serif; }
+        .pill.active { background: white; color: black; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
+        .symbols-container { background: white; border-radius: 20px; padding: 15px; margin-top: 15px; border: 1px solid #ddd; }
+        .symbols-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 10px; }
+        .sym-btn { 
+            background: white; border: 1px solid #efefef; padding: 15px 5px; border-radius: 12px; 
+            text-align: center; cursor: pointer; transition: 0.2s; font-size: 14px; color: #333;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-family: 'Open Sans', sans-serif;
+        }
+        .sym-btn:hover { background: #f8f8f8; border-color: #ccc; }
+        .sym-btn span { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+        .sym-btn small { font-size: 9px; text-transform: uppercase; color: #888; font-weight: 700; }
     </style>
 </head>
 <body>
@@ -109,11 +126,11 @@
         <div id="inputs-container">
             <div class="input-group">
                 <label>Ecuación 1</label>
-                <input type="text" class="eq-input" placeholder="Ej: x + y = sqrt(16)" oninput="actualizarVistaPrevia()">
+                <input type="text" class="eq-input" placeholder="Ej: x + y = sqrt(16)" oninput="actualizarVistaPrevia()" onfocus="setInputActivo(this)">
             </div>
             <div class="input-group">
                 <label>Ecuación 2</label>
-                <input type="text" class="eq-input" placeholder="Ej: x^2 + y = 20" oninput="actualizarVistaPrevia()">
+                <input type="text" class="eq-input" placeholder="Ej: x^2 + y = 20" oninput="actualizarVistaPrevia()" onfocus="setInputActivo(this)">
             </div>
         </div>
 
@@ -135,11 +152,59 @@
         <span id="aviso-imaginario">Nota: Esta calculadora solo admite soluciones en el campo de los reales.</span>
 
         <div id="resultado">Esperando ecuaciones...</div>
+
+        <div class="pills-nav" id="pillsNav">
+            <button class="pill active" onclick="showCategory('principales', this)">Principales</button>
+            <button class="pill" onclick="showCategory('trig', this)">Trigonométricas</button>
+            <button class="pill" onclick="showCategory('inv', this)">Inversas</button>
+            <button class="pill" onclick="showCategory('log', this)">Logarítmicas</button>
+        </div>
+
+        <div id="symbolsPanel" class="symbols-container">
+            <div id="grid-content" class="symbols-grid"></div>
+        </div>
     </div>
 </div>
 
 <script>
     let contadorFilas = 2;
+    let inputActivo = document.querySelector('.eq-input'); // Por defecto el primero
+
+    function setInputActivo(el) {
+        inputActivo = el;
+    }
+
+    // Categorías con un ejemplo cada una
+    const categorias = {
+        principales: [{ s: 'x', t: 'VARIABLE' }],
+        trig: [{ s: 'sin()', t: 'SENO' }],
+        inv: [{ s: 'asin()', t: 'ARCSIN' }],
+        log: [{ s: 'log()', t: 'LOG' }]
+    };
+
+    function showCategory(cat, btn) {
+        document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        const grid = document.getElementById('grid-content');
+        grid.innerHTML = '';
+        categorias[cat].forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'sym-btn';
+            div.innerHTML = `<span>${item.s}</span><small>${item.t}</small>`;
+            div.onclick = () => insertarSimbolo(item.s);
+            grid.appendChild(div);
+        });
+    }
+
+    function insertarSimbolo(s) {
+        if (!inputActivo) return;
+        const pos = inputActivo.selectionStart;
+        const texto = inputActivo.value;
+        inputActivo.value = texto.slice(0, pos) + s + texto.slice(pos);
+        inputActivo.focus();
+        if(s.includes('()')) inputActivo.setSelectionRange(pos + s.length - 1, pos + s.length - 1);
+        actualizarVistaPrevia();
+    }
 
     function actualizarVistaPrevia() {
         const inputs = document.querySelectorAll('.eq-input');
@@ -150,7 +215,6 @@
             let val = i.value.trim();
             if(val !== "") {
                 try {
-                    // Si hay un igual, procesamos ambos lados para que sqrt funcione en ambos
                     if (val.includes('=')) {
                         let partes = val.split('=');
                         let izq = nerdamer(partes[0] || "0").toTeX();
@@ -160,7 +224,6 @@
                         lineasLatex.push(nerdamer(val).toTeX());
                     }
                 } catch(e) {
-                    // Si el usuario está a mitad de escribir (ej: "sqrt("), mostramos texto plano
                     lineasLatex.push("\\text{" + val + "}");
                 }
             }
@@ -180,7 +243,7 @@
         const container = document.getElementById('inputs-container');
         const div = document.createElement('div');
         div.className = 'input-group';
-        div.innerHTML = `<label>Ecuación ${contadorFilas}</label><input type="text" class="eq-input" placeholder="Siguiente..." oninput="actualizarVistaPrevia()">`;
+        div.innerHTML = `<label>Ecuación ${contadorFilas}</label><input type="text" class="eq-input" placeholder="Siguiente..." oninput="actualizarVistaPrevia()" onfocus="setInputActivo(this)">`;
         container.appendChild(div);
     }
 
@@ -200,7 +263,6 @@
         inputs.forEach(i => {
             let val = i.value.trim();
             if(val) {
-                // Nerdamer solveEquations prefiere el formato (izq) - (der)
                 if(val.includes('=')) {
                     let parts = val.split('=');
                     eqs.push(`(${parts[0]}) - (${parts[1]})`);
@@ -213,8 +275,6 @@
         try {
             let sol = nerdamer.solveEquations(eqs);
             let outputLatex = [];
-
-            // Convertir respuesta a objeto manejable
             let cleanSol = {};
             if (Array.isArray(sol)) {
                 if (Array.isArray(sol[0])) {
@@ -222,7 +282,6 @@
                 } else { cleanSol = sol; }
             } else { cleanSol = sol; }
 
-            // Filtro de imaginarios
             if (JSON.stringify(cleanSol).includes('i')) {
                 resDiv.innerHTML = "<span style='color:#777;'>No pertenece a los reales.</span>";
                 return;
@@ -231,7 +290,6 @@
             for (let v in cleanSol) {
                 let rawVal = cleanSol[v];
                 let formattedVal;
-
                 if (esDecimal) {
                     try {
                         let evalued = nerdamer(rawVal).evaluate().text();
@@ -244,7 +302,6 @@
             }
 
             if(outputLatex.length === 0) throw new Error();
-
             resDiv.innerHTML = `$$ ${outputLatex.join(' ; \\quad ')} $$`;
             MathJax.typesetPromise([resDiv]);
 
@@ -252,6 +309,9 @@
             resDiv.innerHTML = "<span style='color:red; font-size:14px;'>Error: Sistema inconsistente o error de escritura.</span>";
         }
     }
+
+    // Inicializar categoría principales al cargar
+    showCategory('principales', document.querySelector('.pill'));
 </script>
 
 </body>
